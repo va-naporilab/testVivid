@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>バフによる部隊戦力推定（専５）</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            max-width: 500px;
+        }
+        label {
+            display: block;
+            margin-top: 10px;
+        }
+        input {
+            width: 100%;
+            padding: 5px;
+            margin-top: 4px;
+        }
+        button {
+            margin-top: 15px;
+            padding: 8px 12px;
+            width: 100%;
+        }
+        .result {
+            margin-top: 20px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+
+<h2>バフによる部隊戦力推定（専５）フル古代</h2>
+<h2>バフを入力<h2>
+
+<label>
+    出撃
+    <input type="number" id="sortie" value="200">
+</label>
+
+<label>
+    生命
+    <input type="number" id="life" value="3000">
+</label>
+
+<label>
+    攻撃
+    <input type="number" id="attack" value="3000">
+</label>
+
+<label>
+    ダメ増
+    <input type="number" id="damageUp" value="300">
+</label>
+
+<label>
+    ダメ減
+    <input type="number" id="damageDown" value="300">
+</label>
+
+<label>
+    防御
+    <input type="number" id="defense" value="100">
+</label>
+
+<button onclick="calculate()">計算する</button>
+
+<div class="result">
+    <p>バフ合算係数：<span id="buffMultiplier">-</span></p>
+    <p>推定部隊戦力（専5フル古代）：<span id="powerValue">-</span></p>
+</div>
+
+<script>
+function calculate() {
+    const sortie = Number(document.getElementById("sortie").value);
+    const life = Number(document.getElementById("life").value);
+    const attack = Number(document.getElementById("attack").value);
+    const damageUp = Number(document.getElementById("damageUp").value);
+    const damageDown = Number(document.getElementById("damageDown").value);
+    const defense = Number(document.getElementById("defense").value);
+    
+
+    // バフ強さ倍率の計算
+    let buffcomponent = 1;
+
+        buffcomponent = life+attack+damageUp*7+damageDown*7+defense*14;
+    
+
+    // 強さ値の計算
+    const powerValue = buffcomponent*sortie*10;
+
+    // 表示
+    document.getElementById("buffcomponent").textContent = buffMultiplier.toFixed(4);
+    document.getElementById("powerValue").textContent = powerValue.toFixed(2);
+}
+</script>
+
+</body>
+</html>
