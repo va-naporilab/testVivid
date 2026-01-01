@@ -17,14 +17,26 @@
             width: 100%;
             padding: 5px;
             margin-top: 4px;
+            box-sizing: border-box;
         }
         button {
             margin-top: 15px;
-            padding: 8px 12px;
+            padding: 10px;
             width: 100%;
+            cursor: pointer;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+        }
+        button:hover {
+            background-color: #45a049;
         }
         .result {
             margin-top: 20px;
+            padding: 15px;
+            background-color: #f9f9f9;
+            border-radius: 4px;
             font-weight: bold;
         }
     </style>
@@ -32,7 +44,7 @@
 <body>
 
 <h2>バフによる部隊戦力推定（専５）フル古代</h2>
-<h2>バフを入力<h2>
+<h3>バフを入力</h3>
 
 <label>
     出撃
@@ -40,27 +52,27 @@
 </label>
 
 <label>
-    生命
+    生命 (%)
     <input type="number" id="life" value="3000">
 </label>
 
 <label>
-    攻撃
+    攻撃 (%)
     <input type="number" id="attack" value="3000">
 </label>
 
 <label>
-    ダメ増
+    ダメ増 (%)
     <input type="number" id="damageUp" value="300">
 </label>
 
 <label>
-    ダメ減
+    ダメ減 (%)
     <input type="number" id="damageDown" value="300">
 </label>
 
 <label>
-    防御
+    防御 (%)
     <input type="number" id="defense" value="100">
 </label>
 
@@ -73,26 +85,25 @@
 
 <script>
 function calculate() {
+    // 入力値の取得
     const sortie = Number(document.getElementById("sortie").value);
     const life = Number(document.getElementById("life").value);
     const attack = Number(document.getElementById("attack").value);
     const damageUp = Number(document.getElementById("damageUp").value);
     const damageDown = Number(document.getElementById("damageDown").value);
     const defense = Number(document.getElementById("defense").value);
-    
 
-    // バフ強さ倍率の計算
-    let buffcomponent = 1;
+    // バフ合算係数の計算
+    // 式: 生命 + 攻撃 + ダメ増*7 + ダメ減*7 + 防御*14
+    const buffMultiplierValue = life + attack + (damageUp * 7) + (damageDown * 7) + (defense * 14);
 
-        buffcomponent = life+attack+damageUp*7+damageDown*7+defense*14;
-    
+    // 強さ値（推定部隊戦力）の計算
+    // 式: 係数 * 出撃 * 10
+    const powerValue = buffMultiplierValue * sortie * 10;
 
-    // 強さ値の計算
-    const powerValue = buffcomponent*sortie*10;
-
-    // 表示
-    document.getElementById("buffcomponent").textContent = buffMultiplier.toFixed(4);
-    document.getElementById("powerValue").textContent = powerValue.toFixed(2);
+    // 結果の表示
+    document.getElementById("buffMultiplier").textContent = buffMultiplierValue.toLocaleString();
+    document.getElementById("powerValue").textContent = powerValue.toLocaleString();
 }
 </script>
 
