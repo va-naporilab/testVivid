@@ -4,88 +4,37 @@
     <meta charset="UTF-8">
     <title>バフによる部隊戦力推定（専５）</title>
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            padding: 20px;
-            max-width: 500px;
-        }
-        label {
-            display: block;
-            margin-top: 10px;
-        }
-        input {
-            width: 100%;
-            padding: 5px;
-            margin-top: 4px;
-            box-sizing: border-box;
-        }
-        button {
-            margin-top: 15px;
-            padding: 10px;
-            width: 100%;
-            cursor: pointer;
-            background-color: #4CAF50;
-            color: white;
-            border: none;
-            border-radius: 4px;
-        }
-        button:hover {
-            background-color: #45a049;
-        }
-        .result {
-            margin-top: 20px;
-            padding: 15px;
-            background-color: #f9f9f9;
-            border-radius: 4px;
-            font-weight: bold;
-        }
+        body { font-family: Arial, sans-serif; padding: 20px; max-width: 500px; line-height: 1.6; }
+        label { display: block; margin-top: 10px; font-weight: bold; }
+        input { width: 100%; padding: 8px; margin-top: 4px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px; }
+        button { margin-top: 20px; padding: 12px; width: 100%; cursor: pointer; background-color: #007bff; color: white; border: none; border-radius: 4px; font-size: 16px; }
+        button:hover { background-color: #0056b3; }
+        .result { margin-top: 25px; padding: 15px; background-color: #f1f3f5; border-left: 5px solid #007bff; border-radius: 4px; }
+        .result p { margin: 5px 0; }
+        span { color: #d9534f; font-size: 1.2em; }
     </style>
 </head>
 <body>
 
-<h2>バフによる部隊戦力推定（専５）フル古代</h2>
-<h3>バフを入力</h3>
+<h2>部隊戦力推定ツール</h2>
+<p>専5・フル古代装備を想定した計算です。</p>
 
-<label>
-    出撃
-    <input type="number" id="sortie" value="200">
-</label>
+<label>出撃: <input type="number" id="sortie" value="200"></label>
+<label>生命 (%): <input type="number" id="life" value="3000"></label>
+<label>攻撃 (%): <input type="number" id="attack" value="3000"></label>
+<label>ダメ増 (%): <input type="number" id="damageUp" value="300"></label>
+<label>ダメ減 (%): <input type="number" id="damageDown" value="300"></label>
+<label>防御 (%): <input type="number" id="defense" value="100"></label>
 
-<label>
-    生命 (%)
-    <input type="number" id="life" value="3000">
-</label>
-
-<label>
-    攻撃 (%)
-    <input type="number" id="attack" value="3000">
-</label>
-
-<label>
-    ダメ増 (%)
-    <input type="number" id="damageUp" value="300">
-</label>
-
-<label>
-    ダメ減 (%)
-    <input type="number" id="damageDown" value="300">
-</label>
-
-<label>
-    防御 (%)
-    <input type="number" id="defense" value="100">
-</label>
-
-<button onclick="calculate()">計算する</button>
+<button onclick="calculate()">計算を実行</button>
 
 <div class="result">
-    <p>バフ合算係数：<span id="buffMultiplier">-</span></p>
-    <p>推定部隊戦力（専5フル古代）：<span id="powerValue">-</span></p>
+    <p>バフ合算係数: <span id="buffMultiplier">-</span></p>
+    <p>推定部隊戦力: <span id="powerValue">-</span></p>
 </div>
 
 <script>
 function calculate() {
-    // 入力値の取得
     const sortie = Number(document.getElementById("sortie").value);
     const life = Number(document.getElementById("life").value);
     const attack = Number(document.getElementById("attack").value);
@@ -93,17 +42,19 @@ function calculate() {
     const damageDown = Number(document.getElementById("damageDown").value);
     const defense = Number(document.getElementById("defense").value);
 
-    // バフ合算係数の計算
-    // 式: 生命 + 攻撃 + ダメ増*7 + ダメ減*7 + 防御*14
+    // バフ合算係数
     const buffMultiplierValue = life + attack + (damageUp * 7) + (damageDown * 7) + (defense * 14);
 
-    // 強さ値（推定部隊戦力）の計算
-    // 式: 係数 * 出撃 * 10
-    const powerValue = buffMultiplierValue * sortie * 10;
+    // 戦力計算 (100万で割ってM単位へ)
+    const rawPowerValue = buffMultiplierValue * sortie * 10;
+    const powerInM = rawPowerValue / 1000000;
 
-    // 結果の表示
+    // 表示処理
     document.getElementById("buffMultiplier").textContent = buffMultiplierValue.toLocaleString();
-    document.getElementById("powerValue").textContent = powerValue.toLocaleString();
+    
+    // 有効数字3桁に調整
+    // toPrecision(3)で有効数字3桁にし、Number()で不要な末尾の0を消してからMを結合
+    document.getElementById("powerValue").textContent = Number(powerInM.toPrecision(3)) + " M";
 }
 </script>
 
