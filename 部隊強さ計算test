@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>バフ強さ計算ツール</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            max-width: 500px;
+        }
+        label {
+            display: block;
+            margin-top: 10px;
+        }
+        input {
+            width: 100%;
+            padding: 5px;
+            margin-top: 4px;
+        }
+        button {
+            margin-top: 15px;
+            padding: 8px 12px;
+            width: 100%;
+        }
+        .result {
+            margin-top: 20px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+
+<h2>バフ強さ計算ツール</h2>
+
+<label>
+    出撃
+    <input type="number" id="sortie" value="0">
+</label>
+
+<label>
+    生命
+    <input type="number" id="life" value="0">
+</label>
+
+<label>
+    攻撃
+    <input type="number" id="attack" value="0">
+</label>
+
+<label>
+    ダメ増
+    <input type="number" id="damageUp" value="0">
+</label>
+
+<label>
+    ダメ減
+    <input type="number" id="damageDown" value="0">
+</label>
+
+<label>
+    防御
+    <input type="number" id="defense" value="0">
+</label>
+
+<button onclick="calculate()">計算する</button>
+
+<div class="result">
+    <p>バフ強さ倍率：<span id="buffMultiplier">-</span></p>
+    <p>強さ値：<span id="powerValue">-</span></p>
+</div>
+
+<script>
+function calculate() {
+    const sortie = Number(document.getElementById("sortie").value);
+
+    const buffs = [
+        Number(document.getElementById("life").value),
+        Number(document.getElementById("attack").value),
+        Number(document.getElementById("damageUp").value),
+        Number(document.getElementById("damageDown").value),
+        Number(document.getElementById("defense").value)
+    ];
+
+    // バフ強さ倍率の計算
+    let buffMultiplier = 1;
+    buffs.forEach(value => {
+        buffMultiplier *= (value + 100) / 100;
+    });
+
+    // 強さ値の計算
+    const powerValue = Math.pow(sortie, 2) * buffMultiplier;
+
+    // 表示
+    document.getElementById("buffMultiplier").textContent = buffMultiplier.toFixed(4);
+    document.getElementById("powerValue").textContent = powerValue.toFixed(2);
+}
+</script>
+
+</body>
+</html>
