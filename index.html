@@ -2,59 +2,136 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <title>バフによる部隊戦力推定（専５）</title>
+    <title>バフによる部隊戦力推定（詳細解析）</title>
     <style>
-        body { font-family: Arial, sans-serif; padding: 20px; max-width: 500px; line-height: 1.6; }
-        label { display: block; margin-top: 10px; font-weight: bold; }
+        body { font-family: 'Helvetica Neue', Arial, sans-serif; padding: 20px; max-width: 600px; line-height: 1.5; color: #333; }
+        label { display: block; margin-top: 10px; font-size: 0.9em; font-weight: bold; }
         input { width: 100%; padding: 8px; margin-top: 4px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px; }
-        button { margin-top: 20px; padding: 12px; width: 100%; cursor: pointer; background-color: #007bff; color: white; border: none; border-radius: 4px; font-size: 16px; }
-        button:hover { background-color: #0056b3; }
-        .result { margin-top: 25px; padding: 15px; background-color: #f1f3f5; border-left: 5px solid #007bff; border-radius: 4px; }
-        .result p { margin: 5px 0; }
-        span { color: #d9534f; font-size: 1.2em; }
+        button { margin-top: 20px; padding: 12px; width: 100%; cursor: pointer; background-color: #28a745; color: white; border: none; border-radius: 4px; font-size: 16px; font-weight: bold; }
+        button:hover { background-color: #218838; }
+        
+        .result-section { margin-top: 25px; padding: 15px; background-color: #f8f9fa; border: 1px solid #dee2e6; border-radius: 6px; }
+        .result-section h3 { margin-top: 0; border-bottom: 2px solid #28a745; padding-bottom: 5px; font-size: 1.1em; }
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .res-item { background: white; padding: 8px; border-radius: 4px; border: 1px solid #eee; }
+        .res-label { font-size: 0.8em; color: #666; display: block; }
+        .res-value { font-size: 1.1em; font-weight: bold; color: #d9534f; }
+        .full-width { grid-column: span 2; background: #fff3f3; }
     </style>
 </head>
 <body>
 
-<h2>部隊戦力推定ツール</h2>
-<p>専5・フル古代装備を想定した計算です。</p>
+<h2>部隊戦力詳細解析</h2>
 
-<label>出撃: <input type="number" id="sortie" value="200"></label>
-<label>生命 (%): <input type="number" id="life" value="3000"></label>
-<label>攻撃 (%): <input type="number" id="attack" value="3000"></label>
-<label>ダメ増 (%): <input type="number" id="damageUp" value="300"></label>
-<label>ダメ減 (%): <input type="number" id="damageDown" value="300"></label>
-<label>防御 (%): <input type="number" id="defense" value="100"></label>
+<div class="input-group">
+    <label>出撃: <input type="number" id="sortie" value="200"></label>
+    <label>生命 (%): <input type="number" id="life" value="3000"></label>
+    <label>攻撃 (%): <input type="number" id="attack" value="3000"></label>
+    <label>ダメ増 (%): <input type="number" id="damageUp" value="300"></label>
+    <label>ダメ減 (%): <input type="number" id="damageDown" value="300"></label>
+    <label>防御 (%): <input type="number" id="defense" value="100"></label>
+</div>
 
-<button onclick="calculate()">計算を実行</button>
+<button onclick="calculateAll()">解析を実行</button>
 
-<div class="result">
-    <p>バフ合算係数: <span id="buffMultiplier">-</span></p>
-    <p>推定部隊戦力: <span id="powerValue">-</span></p>
+<div id="results" class="result-section" style="display:none;">
+    <h3>1. 基本推定値</h3>
+    <div class="grid">
+        <div class="res-item">
+            <span class="res-label">バフ合算係数</span>
+            <span class="res-value" id="outBuffMult">-</span>
+        </div>
+        <div class="res-item">
+            <span class="res-label">推定部隊戦力(専5)</span>
+            <span class="res-value" id="outPowerM">-</span>
+        </div>
+    </div>
+
+    <h3>2. 換算・バランス指標</h3>
+    <div class="grid">
+        <div class="res-item"><span class="res-label">ダメ減の生命換算</span><span class="res-value" id="res1">-</span></div>
+        <div class="res-item"><span class="res-label">ダメ増の攻撃換算</span><span class="res-value" id="res2">-</span></div>
+        <div class="res-item"><span class="res-label">防御の生命換算</span><span class="res-value" id="res3">-</span></div>
+        <div class="res-item"><span class="res-label">防御のダメ減換算</span><span class="res-value" id="res4">-</span></div>
+        <div class="res-item"><span class="res-label">生命攻撃バランス</span><span class="res-value" id="res5">-</span></div>
+        <div class="res-item"><span class="res-label">ダメ増減バランス</span><span class="res-value" id="res6">-</span></div>
+    </div>
+
+    <h3>3. 総合評価指標</h3>
+    <div class="grid">
+        <div class="res-item"><span class="res-label">バフ火力補正</span><span class="res-value" id="res7">-</span></div>
+        <div class="res-item"><span class="res-label">バフ耐久補正</span><span class="res-value" id="res8">-</span></div>
+        <div class="res-item full-width"><span class="res-label">総合バフ強さ値</span><span class="res-value" id="res9">-</span></div>
+        <div class="res-item"><span class="res-label">バフ評価(5乗根)</span><span class="res-value" id="res10">-</span></div>
+        <div class="res-item"><span class="res-label">部隊構成評価(7乗根)</span><span class="res-value" id="res11">-</span></div>
+    </div>
 </div>
 
 <script>
-function calculate() {
-    const sortie = Number(document.getElementById("sortie").value);
-    const life = Number(document.getElementById("life").value);
-    const attack = Number(document.getElementById("attack").value);
-    const damageUp = Number(document.getElementById("damageUp").value);
-    const damageDown = Number(document.getElementById("damageDown").value);
-    const defense = Number(document.getElementById("defense").value);
-
-    // バフ合算係数
-    const buffMultiplierValue = life + attack + (damageUp * 7) + (damageDown * 7) + (defense * 14);
-
-    // 戦力計算 (100万で割ってM単位へ)
-    const rawPowerValue = buffMultiplierValue * sortie * 10;
-    const powerInM = rawPowerValue / 1000000;
-
-    // 表示処理
-    document.getElementById("buffMultiplier").textContent = buffMultiplierValue.toLocaleString();
+// 数値を有効数字3桁の漢数字・単位付き文字列に変換する関数
+function formatValue(num) {
+    if (num === 0) return "0";
     
-    // 有効数字3桁に調整
-    // toPrecision(3)で有効数字3桁にし、Number()で不要な末尾の0を消してからMを結合
-    document.getElementById("powerValue").textContent = Number(powerInM.toPrecision(3)) + " M";
+    let suffix = "";
+    let displayNum = num;
+
+    if (num >= 100000000) {
+        displayNum = num / 100000000;
+        suffix = " 億";
+    } else if (num >= 10000) {
+        displayNum = num / 10000;
+        suffix = " 万";
+    }
+
+    // 有効数字3桁に丸める
+    let formatted = Number(displayNum.toPrecision(3));
+    return formatted + suffix;
+}
+
+function calculateAll() {
+    const s = Number(document.getElementById("sortie").value);
+    const l = Number(document.getElementById("life").value);
+    const a = Number(document.getElementById("attack").value);
+    const du = Number(document.getElementById("damageUp").value);
+    const dd = Number(document.getElementById("damageDown").value);
+    const df = Number(document.getElementById("defense").value);
+
+    // 1. 基本
+    const buffMult = l + a + (du * 7) + (dd * 7) + (df * 14);
+    const powerM = (buffMult * s * 10) / 1000000;
+
+    // 2. 換算・バランス
+    const v1 = (l + 100) / (dd + 100);
+    const v2 = (a + 100) / (du + 100);
+    const v3 = (l + 100) / (df + 100);
+    const v4 = (dd + 100) / (df + 100);
+    const v5 = Math.min(l + 100, a + 100) / Math.max(l + 100, a + 100);
+    const v6 = Math.min(du + 100, dd + 100) / Math.max(du + 100, dd + 100);
+
+    // 3. 総合評価
+    const v7 = ((a + 100) * (du + 100)) / 10000;
+    const v8 = ((l + 100) * (dd + 100) * (df + 100)) / 1000000;
+    const v9 = v7 * v8;
+    const v10 = Math.pow(v9, 1/5);
+    const v11 = Math.pow(v9 * s * s, 1/7);
+
+    // 表示
+    document.getElementById("outBuffMult").textContent = buffMult.toLocaleString();
+    document.getElementById("outPowerM").textContent = Number(powerM.toPrecision(3)) + " M";
+    
+    document.getElementById("res1").textContent = formatValue(v1);
+    document.getElementById("res2").textContent = formatValue(v2);
+    document.getElementById("res3").textContent = formatValue(v3);
+    document.getElementById("res4").textContent = formatValue(v4);
+    document.getElementById("res5").textContent = formatValue(v5);
+    document.getElementById("res6").textContent = formatValue(v6);
+    document.getElementById("res7").textContent = formatValue(v7);
+    document.getElementById("res8").textContent = formatValue(v8);
+    document.getElementById("res9").textContent = formatValue(v9);
+    document.getElementById("res10").textContent = formatValue(v10);
+    document.getElementById("res11").textContent = formatValue(v11);
+
+    document.getElementById("results").style.display = "block";
 }
 </script>
 
