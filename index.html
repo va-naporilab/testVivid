@@ -74,13 +74,13 @@
                 <div class="res-item"><span class="res-label">生命攻撃バランス</span><span class="res-value" id="own_v5">-</span></div>
                 <div class="res-item"><span class="res-label">ダメ増減バランス</span><span class="res-value" id="own_v6">-</span></div>
             </div>
-            <h4>3. 総合評価指標</h4>
+            <h4>3. 総合評価指標（相性の影響あり）</h4>
             <div class="res-grid">
                 <div class="res-item"><span class="res-label">火力補正倍率</span><span class="res-value" id="own_v7">-</span></div>
                 <div class="res-item"><span class="res-label">耐久補正倍率</span><span class="res-value" id="own_v8">-</span></div>
                 <div class="res-item full-width"><span class="res-label">総合バフ強さ値</span><span class="res-value" id="own_v9">-</span></div>
                 <div class="res-item"><span class="res-label">バフ評価(5乗根)</span><span class="res-value highlight" id="own_v10">-</span></div>
-                <div class="res-item"><span class="res-label">構成評価(7乗根)</span><span class="res-value highlight" id="own_v11">-</span></div>
+                <div class="res-item"><span class="res-label">部隊構成評価(7乗根)</span><span class="res-value highlight" id="own_v11">-</span></div>
             </div>
         </div>
     </div>
@@ -113,13 +113,13 @@
                 <div class="res-item"><span class="res-label">生命攻撃バランス</span><span class="res-value" id="enm_v5">-</span></div>
                 <div class="res-item"><span class="res-label">ダメ増減バランス</span><span class="res-value" id="enm_v6">-</span></div>
             </div>
-            <h4>3. 総合評価指標</h4>
+            <h4>3. 総合評価指標（相性の影響あり）</h4>
             <div class="res-grid">
                 <div class="res-item"><span class="res-label">火力補正倍率</span><span class="res-value" id="enm_v7">-</span></div>
                 <div class="res-item"><span class="res-label">耐久補正倍率</span><span class="res-value" id="enm_v8">-</span></div>
                 <div class="res-item full-width"><span class="res-label">総合バフ強さ値</span><span class="res-value" id="enm_v9">-</span></div>
                 <div class="res-item"><span class="res-label">バフ評価(5乗根)</span><span class="res-value highlight" id="enm_v10">-</span></div>
-                <div class="res-item"><span class="res-label">構成評価(7乗根)</span><span class="res-value highlight" id="enm_v11">-</span></div>
+                <div class="res-item"><span class="res-label">部隊構成評価(7乗根)</span><span class="res-value highlight" id="enm_v11">-</span></div>
             </div>
         </div>
     </div>
@@ -226,7 +226,7 @@ function calculateBattle() {
 
     winnerAnnounce.textContent = winnerLabel;
     winnerAnnounce.className = "winner-text " + winnerClass;
-    powerDiff.textContent = "強さの差: 約 " + strengthMultiplier.toFixed(2) + " 倍";
+    powerDiff.textContent = "兵種相性込みの強さの差: 約 " + strengthMultiplier.toFixed(2) + " 倍";
     
     predDiv.scrollIntoView({ behavior: 'smooth' });
 }
