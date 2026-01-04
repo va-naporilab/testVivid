@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<title>戦闘減衰シミュレータ（鉄壁対応）</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+body { font-family: "Segoe UI", sans-serif; margin: 20px; }
+
+fieldset {
+  margin-bottom: 15px;
+  padding: 12px;
+  border-radius: 8px;
+}
+
+fieldset.A {
+  border: 2px solid #2b6cb0;
+  background: #f0f6ff;
+}
+
+fieldset.B {
+  border: 2px solid #c53030;
+  background: #fff5f5;
+}
+
+legend {
+  font-weight: bold;
+  padding: 0 6px;
+}
+
+label {
+  display: inline-block;
+  width: 180px;
+}
+
+input {
+  width: 80px;
+}
+
+.unit {
+  margin-left: 4px;
+  font-size: 12px;
+  color: #555;
+}
+
+.iron-box {
+  margin-top: 10px;
+  padding: 8px;
+  background: rgba(0,0,0,0.04);
+  border-radius: 6px;
+}
+
+.iron-title {
+  font-size: 12px;
+  margin-bottom: 6px;
+  color: #444;
+}
+
+.iron-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+button {
+  padding: 10px 24px;
+  font-size: 15px;
+  font-weight: bold;
+  background: #2f855a;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+button:hover {
+  background: #276749;
+}
+
+#result {
+  margin-top: 20px;
+  padding: 12px;
+  background: #fafafa;
+  border-left: 6px solid #888;
+  font-size: 14px;
+}
+
+#result b {
+  font-size: 16px;
+}
+</style>
+</head>
+<body>
+
+<h2>戦闘減衰シミュレータ（鉄壁効果あり）</h2>
+
+<fieldset class="A">
+<legend>自軍（A）</legend>
+
+<label>出撃数</label>
+<input id="A_units" type="number" value="200"><span class="unit">台</span><br>
+
+<label>火力倍率</label>
+<input id="A_fire" type="number" value="100"><span class="unit">%</span><br>
+
+<label>耐久倍率</label>
+<input id="A_hp" type="number" value="170"><span class="unit">%</span><br>
+
+<div class="iron-box">
+  <div class="iron-title">鉄壁（被ダメ軽減率）</div>
+  <div class="iron-row">
+    <span>R1</span><input id="A_iron1" type="number" value="48" oninput="syncIron('A')">
+    <span>R2</span><input id="A_iron2" type="number" value="48">
+    <span>R3</span><input id="A_iron3" type="number" value="0">
+    <span class="unit">%</span>
+  </div>
+</div>
+</fieldset>
+
+<fieldset class="B">
+<legend>敵軍（B）</legend>
+
+<label>出撃数</label>
+<input id="B_units" type="number" value="200"><span class="unit">台</span><br>
+
+<label>火力倍率</label>
+<input id="B_fire" type="number" value="100"><span class="unit">%</span><br>
+
+<label>耐久倍率</label>
+<input id="B_hp" type="number" value="170"><span class="unit">%</span><br>
+
+<div class="iron-box">
+  <div class="iron-title">鉄壁（被ダメ軽減率）</div>
+  <div class="iron-row">
+    <span>R1</span><input id="B_iron1" type="number" value="48" oninput="syncIron('B')">
+    <span>R2</span><input id="B_iron2" type="number" value="48">
+    <span>R3</span><input id="B_iron3" type="number" value="0">
+    <span class="unit">%</span>
+  </div>
+</div>
+</fieldset>
+
+<button onclick="simulate()">シミュレーション実行</button>
+
+<canvas id="chart" width="800" height="400"></canvas>
+<div id="result"></div>
+
+<script>
+let chart;
+
+function syncIron(side) {
+  document.getElementById(side + "_iron2").value =
+    document.getElementById(side + "_iron1").value;
+}
+
+function simulate() {
+  const HA0 = +A_units.value;
+  const HB0 = +B_units.value;
+
+  const alphaBase = +A_fire.value / +B_hp.value;
+  const betaBase  = +B_fire.value / +A_hp.value;
+
+  const A_iron = [
+    +A_iron1.value, +A_iron2.value, +A_iron3.value
+  ];
+  const B_iron = [
+    +B_iron1.value, +B_iron2.value, +B_iron3.value
+  ];
+
+  const dt = 0.1;
+  let t = 0;
+  let HA = HA0;
+  let HB = HB0;
+
+  const labels = [];
+  const dataA = [];
+  const dataB = [];
+  
+  labels.push(t.toFixed(1));
+  dataA.push(Math.max(HA, 0));
+  dataB.push(Math.max(HB, 0));
+
+  while (t <= 35 && HA > 0 && HB > 0) {
+    const round = Math.floor(t) + 1;
+
+    const AIron = round <= 3 ? A_iron[round - 1] : 0;
+    const BIron = round <= 3 ? B_iron[round - 1] : 0;
+
+    const alpha = alphaBase * (1 - BIron / 100);
+    const beta  = betaBase  * (1 - AIron / 100);
+
+    const dHA = -beta * HB * dt;
+    const dHB = -alpha * HA * dt;
+
+    HA += dHA;
+    HB += dHB;
+    t += dt;
+
+    labels.push(t.toFixed(1));
+    dataA.push(Math.max(HA, 0));
+    dataB.push(Math.max(HB, 0));
+  }
+
+  if (chart) chart.destroy();
+
+  chart = new Chart(document.getElementById("chart"), {
+    type: "line",
+    data: {
+      labels,
+      datasets: [
+        { label: "自軍 残り台数", data: dataA, borderColor: "blue", fill: false },
+        { label: "敵軍 残り台数", data: dataB, borderColor: "red", fill: false }
+      ]
+    },
+    options: {
+      scales: {
+        x: { title: { display: true, text: "ラウンド数" }, ticks: { stepSize: 1 }},
+        y: { title: { display: true, text: "残り台数（台）" }, min: 0 }
+      }
+    }
+  });
+
+  const tFinal = Math.ceil(t);
+  let result = "";
+
+  if (HA <= 0 && HB <= 0) result = "<b>引き分け</b><br>";
+  else if (HA <= 0) result = "<b>勝者：敵軍</b><br>";
+  else if (HB <= 0) result = "<b>勝者：自軍</b><br>";
+  else result = "<b>引き分け</b><br>";
+
+  result += `戦闘継続：${Math.min(tFinal, 35)} ラウンド<br><br>`;
+  result += `自軍：${Math.ceil(Math.max(HA,0))} 台（${(HA/HA0*100).toFixed(1)} %）<br>`;
+  result += `敵軍：${Math.ceil(Math.max(HB,0))} 台（${(HB/HB0*100).toFixed(1)} %）`;
+
+  document.getElementById("result").innerHTML = result;
+}
+</script>
+
+</body>
+</html>
