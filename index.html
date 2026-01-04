@@ -2,236 +2,275 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <title>部隊戦力比較・詳細解析シミュレーター</title>
+    <title>部隊戦力比較・詳細解析シミュレーター v2</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         body { font-family: 'Helvetica Neue', Arial, sans-serif; background-color: #f0f2f5; margin: 0; padding: 10px; color: #333; }
-        h2 { text-align: center; color: #1a73e8; margin-bottom: 20px; }
+        h2 { text-align: center; color: #1a73e8; margin-bottom: 5px; }
+        .credit { text-align: center; font-size: 0.8em; color: #666; margin-bottom: 20px; }
         
-        /* 2分割レイアウト */
         .comparison-wrapper { display: flex; gap: 15px; flex-wrap: wrap; justify-content: center; }
-        .side-panel { flex: 1; min-width: 340px; max-width: 550px; background: white; padding: 15px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+        .side-panel { flex: 1; min-width: 360px; max-width: 550px; background: white; padding: 15px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
         .side-own { border-top: 6px solid #1a73e8; }
         .side-enemy { border-top: 6px solid #d93025; }
         
-        h3 { text-align: center; margin-top: 0; color: #444; border-bottom: 1px solid #eee; padding-bottom: 10px; }
+        h3 { text-align: center; margin: 0 0 10px 0; color: #444; border-bottom: 1px solid #eee; padding-bottom: 5px; }
         h4 { font-size: 0.9em; margin: 15px 0 5px 0; color: #1a73e8; border-left: 4px solid #1a73e8; padding-left: 8px; }
 
-        /* 入力UI */
-        .input-group { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; background: #fdfdfd; padding: 10px; border-radius: 8px; border: 1px solid #efefef; }
-        .full-row { grid-column: span 2; }
-        label { display: block; margin-top: 8px; font-size: 0.8em; font-weight: bold; color: #555; }
-        input, select { width: 100%; padding: 8px; margin-top: 4px; box-sizing: border-box; border: 1px solid #ddd; border-radius: 6px; font-size: 15px; }
+        /* 入力UIの改良 */
+        .input-group { background: #fdfdfd; padding: 10px; border-radius: 8px; border: 1px solid #efefef; }
+        .input-row { margin-bottom: 12px; }
+        .label-ctrl { display: flex; justify-content: space-between; align-items: center; }
+        label { font-size: 0.8em; font-weight: bold; color: #555; }
         
-        button { margin: 25px auto; display: block; padding: 15px 40px; cursor: pointer; background-color: #28a745; color: white; border: none; border-radius: 50px; font-size: 18px; font-weight: bold; box-shadow: 0 4px 15px rgba(40,167,69,0.3); transition: 0.2s; }
-        button:hover { background-color: #218838; transform: translateY(-2px); }
+        .ctrl-box { display: flex; align-items: center; gap: 5px; margin-top: 4px; }
+        input[type="number"] { width: 70px; padding: 4px; border: 1px solid #ddd; border-radius: 4px; text-align: right; }
+        input[type="range"] { flex-grow: 1; cursor: pointer; }
+        .step-btn { padding: 2px 8px; cursor: pointer; background: #eee; border: 1px solid #ccc; border-radius: 4px; font-size: 12px; }
+        .step-btn:hover { background: #ddd; }
 
-        /* 結果グリッド */
+        select { width: 100%; padding: 6px; border-radius: 6px; border: 1px solid #ddd; margin-top: 4px; }
+
+        /* ボタン */
+        .calc-btn { margin: 25px auto; display: block; padding: 15px 40px; cursor: pointer; background-color: #28a745; color: white; border: none; border-radius: 50px; font-size: 18px; font-weight: bold; box-shadow: 0 4px 15px rgba(40,167,69,0.3); transition: 0.2s; }
+        .calc-btn:hover { background-color: #218838; transform: translateY(-2px); }
+        .nav-btn { margin: 40px auto; display: block; padding: 10px 20px; cursor: pointer; background-color: #6c757d; color: white; border: none; border-radius: 6px; text-decoration: none; text-align: center; width: fit-content; }
+
+        /* 結果表示 */
         .res-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 5px; }
         .res-item { background: #f8f9fa; padding: 6px 8px; border-radius: 4px; border: 1px solid #eee; }
-        .res-label { font-size: 0.7em; color: #666; display: block; height: 1.2em; overflow: hidden; }
+        .res-label { font-size: 0.7em; color: #666; display: block; }
         .res-value { font-size: 0.95em; font-weight: bold; color: #333; }
-        .highlight { color: #d93025; font-size: 1.05em; }
-        .full-width { grid-column: span 2; background: #fff3f3; }
+        .highlight { color: #d93025; }
+        .full-width { grid-column: span 2; }
+        .important-res { background: #fff3f3; border: 1px solid #ffcdd2; }
+
+        /* チャートエリア */
+        .chart-container { max-width: 500px; margin: 20px auto; background: white; padding: 15px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
         
-        /* 勝敗予想セクション */
         .battle-prediction { margin: 30px auto; max-width: 600px; background: white; padding: 25px; border-radius: 12px; text-align: center; border: 3px double #1a73e8; display: none; }
-        .winner-text { font-size: 26px; font-weight: bold; margin-bottom: 10px; }
-        .winner-own { color: #1a73e8; }
-        .winner-enemy { color: #d93025; }
-        .multiplier-text { font-size: 20px; color: #444; background: #fff9c4; display: inline-block; padding: 5px 15px; border-radius: 4px; }
     </style>
 </head>
 <body>
 
 <h2>ビビアミ　部隊戦力比較・詳細解析</h2>
-<h3>      by ナポリタン1世 feat.GEMINI</h3>
+<div class="credit">by ナポリタン1世 feat.GEMINI</div>
 
 <div class="comparison-wrapper">
     <div class="side-panel side-own" id="panel_own">
         <h3>自編成</h3>
         <div class="input-group">
-            <div class="full-row"><label>兵種相性: <select id="own_affinity"><option value="same">同兵種</option><option value="win">有利兵種</option><option value="loss">不利兵種</option></select></label></div>
-            <div class="full-row"><label>兵種相性値 (%): <input type="number" id="own_affinityVal" value="120"></label></div>
-            <label>出撃: <input type="number" id="own_sortie" value="200"></label>
-            <label>防御 (%): <input type="number" id="own_defense" value="100"></label>
-            <label>攻撃 (%): <input type="number" id="own_attack" value="3000"></label>
-            <label>生命 (%): <input type="number" id="own_life" value="3000"></label>
-            <label>ダメ増 (%): <input type="number" id="own_damageUp" value="300"></label>
-            <label>ダメ減 (%): <input type="number" id="own_damageDown" value="300"></label>
-        </div>
+            <div class="input-row">
+                <label>兵種相性</label>
+                <select id="own_affinity" onchange="autoCalc()"><option value="same">同兵種</option><option value="win">有利兵種</option><option value="loss">不利兵種</option></select>
+            </div>
+            <div id="own_inputs"></div></div>
 
-        <div class="results-area" style="display:none;" id="own_res_area">
-            <h4>1. 部隊戦力推定　</h4><span class="res-label">（陣形・特殊効果・専7などは評価外なので低めの値）</span>
+        <div class="results-area" id="own_res_area" style="display:none;">
+            <h4>1. 部隊戦力推定</h4>
             <div class="res-grid">
                 <div class="res-item"><span class="res-label">バフ合算係数</span><span class="res-value" id="own_buffMult">-</span></div>
                 <div class="res-item"><span class="res-label">推定戦力（専5フル古代想定）</span><span class="res-value highlight" id="own_powerM">-</span></div>
             </div>
             <h4>2. 換算・バランス</h4>
-            <div class="res-grid">
-                <div class="res-item"><span class="res-label">ダメ減→生命換算</span><span class="res-value" id="own_v1">-</span></div>
-                <div class="res-item"><span class="res-label">ダメ増→攻撃換算</span><span class="res-value" id="own_v2">-</span></div>
-                <div class="res-item"><span class="res-label">防御→生命換算</span><span class="res-value" id="own_v3">-</span></div>
-                <div class="res-item"><span class="res-label">防御→ダメ減換算</span><span class="res-value" id="own_v4">-</span></div>
-                <div class="res-item"><span class="res-label">生命攻撃バランス</span><span class="res-value" id="own_v5">-</span></div>
-                <div class="res-item"><span class="res-label">ダメ増減バランス</span><span class="res-value" id="own_v6">-</span></div>
-            </div>
-            <h4>3. 戦闘評価指標　</h4><span class="res-label">（相性の影響あり。相性⇒同兵種で汎用評価）</span>
-            <div class="res-grid">
-                <div class="res-item"><span class="res-label">火力補正倍率</span><span class="res-value" id="own_v7">-</span></div>
-                <div class="res-item"><span class="res-label">耐久補正倍率</span><span class="res-value" id="own_v8">-</span></div>
-                <div class="res-item full-width"><span class="res-label">バフ相性総合強さ値</span><span class="res-value" id="own_v9">-</span></div>
-                <div class="res-item"><span class="res-label">単位ユニット強さ評価（バフ強さ値5乗根）</span><span class="res-value highlight" id="own_v10">-</span></div>
-                <div class="res-item"><span class="res-label">部隊構成評価（バフ強さ値×出撃2乗の7乗根）</span><span class="res-value highlight" id="own_v11">-</span></div>
-            </div>
+            <div class="res-grid" id="own_kansan_grid"></div>
+            <h4>3. 戦闘評価指標</h4>
+            <div class="res-grid" id="own_hyoka_grid"></div>
         </div>
     </div>
 
     <div class="side-panel side-enemy" id="panel_enm">
         <h3>敵編成</h3>
         <div class="input-group">
-            <div class="full-row"><label>兵種相性: <select id="enm_affinity"><option value="same">同兵種</option><option value="win">有利兵種</option><option value="loss">不利兵種</option></select></label></div>
-            <div class="full-row"><label>兵種相性値 (%): <input type="number" id="enm_affinityVal" value="120"></label></div>
-            <label>出撃: <input type="number" id="enm_sortie" value="200"></label>
-            <label>防御 (%): <input type="number" id="enm_defense" value="100"></label>
-            <label>攻撃 (%): <input type="number" id="enm_attack" value="3000"></label>
-            <label>生命 (%): <input type="number" id="enm_life" value="3000"></label>
-            <label>ダメ増 (%): <input type="number" id="enm_damageUp" value="300"></label>
-            <label>ダメ減 (%): <input type="number" id="enm_damageDown" value="300"></label>
-        </div>
+            <div class="input-row">
+                <label>兵種相性</label>
+                <select id="enm_affinity" onchange="autoCalc()"><option value="same">同兵種</option><option value="win">有利兵種</option><option value="loss">不利兵種</option></select>
+            </div>
+            <div id="enm_inputs"></div></div>
 
-        <div class="results-area" style="display:none;" id="enm_res_area">
-            <h4>1. 部隊戦力推定　</h4><span class="res-label">（陣形・特殊効果・専7などは評価外なので低めの値）</span>
+        <div class="results-area" id="enm_res_area" style="display:none;">
+            <h4>1. 部隊戦力推定</h4>
             <div class="res-grid">
                 <div class="res-item"><span class="res-label">バフ合算係数</span><span class="res-value" id="enm_buffMult">-</span></div>
                 <div class="res-item"><span class="res-label">推定戦力（専5フル古代想定）</span><span class="res-value highlight" id="enm_powerM">-</span></div>
             </div>
             <h4>2. 換算・バランス</h4>
-            <div class="res-grid">
-                <div class="res-item"><span class="res-label">ダメ減→生命換算</span><span class="res-value" id="enm_v1">-</span></div>
-                <div class="res-item"><span class="res-label">ダメ増→攻撃換算</span><span class="res-value" id="enm_v2">-</span></div>
-                <div class="res-item"><span class="res-label">防御→生命換算</span><span class="res-value" id="enm_v3">-</span></div>
-                <div class="res-item"><span class="res-label">防御→ダメ減換算</span><span class="res-value" id="enm_v4">-</span></div>
-                <div class="res-item"><span class="res-label">生命攻撃バランス</span><span class="res-value" id="enm_v5">-</span></div>
-                <div class="res-item"><span class="res-label">ダメ増減バランス</span><span class="res-value" id="enm_v6">-</span></div>
-            </div>
-            <h4>3. 戦闘評価指標　</h4><span class="res-label">（相性の影響あり。相性⇒同兵種で汎用評価）</span>
-            <div class="res-grid">
-                <div class="res-item"><span class="res-label">火力補正倍率</span><span class="res-value" id="enm_v7">-</span></div>
-                <div class="res-item"><span class="res-label">耐久補正倍率</span><span class="res-value" id="enm_v8">-</span></div>
-                <div class="res-item full-width"><span class="res-label">バフ相性総合強さ値</span><span class="res-value" id="enm_v9">-</span></div>
-                <div class="res-item"><span class="res-label">単位ユニット強さ評価（バフ強さ値5乗根）</span><span class="res-value highlight" id="enm_v10">-</span></div>
-                <div class="res-item"><span class="res-label">部隊構成評価（バフ強さ値×出撃2乗の7乗根）</span><span class="res-value highlight" id="enm_v11">-</span></div>
-            </div>
+            <div class="res-grid" id="enm_kansan_grid"></div>
+            <h4>3. 戦闘評価指標</h4>
+            <div class="res-grid" id="enm_hyoka_grid"></div>
         </div>
     </div>
 </div>
 
-<button onclick="calculateBattle()">全軍、詳細解析開始！</button>
-
-<div id="battlePrediction" class="battle-prediction">
-    <div id="winnerAnnounce" class="winner-text"></div>
-    <div id="powerDiff" class="multiplier-text"></div>
+<div class="chart-container">
+    <canvas id="radarChart"></canvas>
 </div>
 
+<button class="calc-btn" onclick="calculateBattle()">全軍、詳細解析開始！</button>
+
+<div id="battlePrediction" class="battle-prediction">
+    <div id="winnerAnnounce" style="font-size:24px; font-weight:bold;"></div>
+    <div id="powerDiff" style="font-size:18px; margin-top:10px; background:#fff9c4; display:inline-block; padding:5px 15px;"></div>
+</div>
+
+<a href="TheoreticalSimulator.html" class="nav-btn">理論近似シミュレータへ移動</a>
+
 <script>
+// 設定データ
+const paramConfig = [
+    { key: "affinityVal", label: "兵種相性値 (%)", min: 0, max: 300, val: 120 },
+    { key: "sortie", label: "出撃", min: 0, max: 600, val: 200 },
+    { key: "attack", label: "攻撃 (%)", min: 0, max: 10000, val: 3000 },
+    { key: "life", label: "生命 (%)", min: 0, max: 10000, val: 3000 },
+    { key: "damageUp", label: "ダメ増 (%)", min: 0, max: 1500, val: 300 },
+    { key: "damageDown", label: "ダメ減 (%)", min: 0, max: 1500, val: 300 },
+    { key: "defense", label: "防御 (%)", min: 0, max: 600, val: 100 }
+];
+
+// UI生成
+function initUI(prefix) {
+    const container = document.getElementById(prefix + "_inputs");
+    paramConfig.forEach(p => {
+        const row = document.createElement("div");
+        row.className = "input-row";
+        row.innerHTML = `
+            <div class="label-ctrl"><label>${p.label}</label></div>
+            <div class="ctrl-box">
+                <button class="step-btn" onclick="stepVal('${prefix}_${p.key}', -10)">-10</button>
+                <input type="range" id="${prefix}_${p.key}_range" min="${p.min}" max="${p.max}" value="${p.val}" oninput="syncVal('${prefix}_${p.key}', 'range')">
+                <input type="number" id="${prefix}_${p.key}" value="${p.val}" oninput="syncVal('${prefix}_${p.key}', 'num')">
+                <button class="step-btn" onclick="stepVal('${prefix}_${p.key}', 10)">+10</button>
+            </div>
+        `;
+        container.appendChild(row);
+    });
+}
+
+function syncVal(id, source) {
+    const range = document.getElementById(id + "_range");
+    const num = document.getElementById(id);
+    if (source === 'range') num.value = range.value;
+    else range.value = num.value;
+}
+
+function stepVal(id, step) {
+    const num = document.getElementById(id);
+    num.value = Math.max(0, parseInt(num.value) + step);
+    syncVal(id, 'num');
+}
+
+initUI("own");
+initUI("enm");
+
+let radarChart = null;
+
 function formatValue(num) {
     if (num === 0) return "0";
-    let suffix = "";
     let d = num;
+    let suffix = "";
     if (num >= 100000000) { d /= 100000000; suffix = " 億"; }
     else if (num >= 10000) { d /= 10000; suffix = " 万"; }
     return Number(d.toPrecision(3)) + suffix;
 }
 
 function runCalc(prefix) {
-    const s = Number(document.getElementById(prefix + "_sortie").value);
-    const l = Number(document.getElementById(prefix + "_life").value);
-    const a = Number(document.getElementById(prefix + "_attack").value);
-    const du = Number(document.getElementById(prefix + "_damageUp").value);
-    const dd = Number(document.getElementById(prefix + "_damageDown").value);
-    const df = Number(document.getElementById(prefix + "_defense").value);
+    const getV = (key) => Number(document.getElementById(prefix + "_" + key).value);
+    const s = getV("sortie"), l = getV("life"), a = getV("attack"), du = getV("damageUp"), dd = getV("damageDown"), df = getV("defense"), affVal = getV("affinityVal");
     const affType = document.getElementById(prefix + "_affinity").value;
-    const affVal = Number(document.getElementById(prefix + "_affinityVal").value);
 
-    // 攻撃項の相性補正ロジック
-    let adjAtkTerm;
-    if (affType === "win") {
-        adjAtkTerm = a + affVal + 100;
-    } else if (affType === "loss") {
-        adjAtkTerm = (a + 100) / (1 + affVal / 100);
-    } else {
-        adjAtkTerm = a + 100;
-    }
+    let adjAtkTerm = (affType === "win") ? (a + affVal + 100) : (affType === "loss" ? (a + 100) / (1 + affVal / 100) : (a + 100));
 
-    // 1. 基本
+    // 1. 戦力
     const buffMult = l + a + (du * 7) + (dd * 7) + (df * 14);
     const powerM = (buffMult * s * 10) / 1000000;
 
     // 2. 換算
-    const v1 = (l + 100) / (dd + 100);
-    const v2 = (a + 100) / (du + 100);
-    const v3 = (l + 100) / (df + 100);
-    const v4 = (dd + 100) / (df + 100);
-    const v5 = Math.min(l + 100, a + 100) / Math.max(l + 100, a + 100);
-    const v6 = Math.min(du + 100, dd + 100) / Math.max(du + 100, dd + 100);
+    const kansan = {
+        "ダメ減→生命換算": (l + 100) / (dd + 100),
+        "ダメ増→攻撃換算": (a + 100) / (du + 100),
+        "防御→生命換算": (l + 100) / (df + 100),
+        "防御→ダメ減換算": (dd + 100) / (df + 100),
+        "生命攻撃バランス": Math.min(l + 100, a + 100) / Math.max(l + 100, a + 100),
+        "ダメ増減バランス": Math.min(du + 100, dd + 100) / Math.max(du + 100, dd + 100)
+    };
 
-    // 3. 総合
-    const v7 = (adjAtkTerm * (du + 100)) / 10000;
-    const v8 = ((l + 100) * (dd + 100) * (df + 100)) / 1000000;
-    const v9 = v7 * v8;
-    const v10 = Math.pow(v9, 1/5);
-    const v11 = Math.pow(v9 * s * s, 1/7);
+    // 3. 指標
+    const v7 = (adjAtkTerm * (du + 100)) / 10000; // 火力倍
+    const v8 = ((l + 100) * (dd + 100) * (df + 100)) / 1000000; // 耐久倍
+    const v9 = v7 * v8; // 総合強さ値
+    const v9_s2 = v9 * s * s; // 総合編成強さ倍率（出撃考慮）
 
-    // DOM書き出し
+    const hyoka = {
+        "バフ相性火力補正（倍）": v7,
+        "バフ相性耐久補正（倍）": v8,
+        "火力補正（出撃込み）": v7 * s,
+        "耐久補正（出撃込み）": v8 * s,
+        "バフ相性総合強さ値": v9,
+        "総合編成強さ倍率（出撃考慮）": v9_s2,
+        "単位強さ評価(5乗根)": Math.pow(v9, 1/5),
+        "部隊構成評価(7乗根)": Math.pow(v9_s2, 1/7)
+    };
+
+    // DOM出力
     document.getElementById(prefix + "_buffMult").textContent = buffMult.toLocaleString();
-    document.getElementById(prefix + "_powerM").textContent = Number(powerM.toPrecision(3)) + " M";
-    document.getElementById(prefix + "_v1").textContent = formatValue(v1);
-    document.getElementById(prefix + "_v2").textContent = formatValue(v2);
-    document.getElementById(prefix + "_v3").textContent = formatValue(v3);
-    document.getElementById(prefix + "_v4").textContent = formatValue(v4);
-    document.getElementById(prefix + "_v5").textContent = formatValue(v5);
-    document.getElementById(prefix + "_v6").textContent = formatValue(v6);
-    document.getElementById(prefix + "_v7").textContent = formatValue(v7);
-    document.getElementById(prefix + "_v8").textContent = formatValue(v8);
-    document.getElementById(prefix + "_v9").textContent = formatValue(v9);
-    document.getElementById(prefix + "_v10").textContent = formatValue(v10);
-    document.getElementById(prefix + "_v11").textContent = formatValue(v11);
-
+    document.getElementById(prefix + "_powerM").textContent = powerM.toPrecision(3) + " M";
+    
+    const renderGrid = (id, data) => {
+        const g = document.getElementById(id); g.innerHTML = "";
+        for (let k in data) {
+            const item = document.createElement("div");
+            item.className = "res-item" + (k.includes("評価") || k.includes("考慮") ? " important-res" : "");
+            if (k === "バフ相性総合強さ値" || k === "総合編成強さ倍率（出撃考慮）") item.classList.add("full-width");
+            item.innerHTML = `<span class="res-label">${k}</span><span class="res-value">${formatValue(data[k])}</span>`;
+            g.appendChild(item);
+        }
+    };
+    renderGrid(prefix + "_kansan_grid", kansan);
+    renderGrid(prefix + "_hyoka_grid", hyoka);
     document.getElementById(prefix + "_res_area").style.display = "block";
 
-    return v11;
+    return { v11: hyoka["部隊構成評価(7乗根)"], radar: [a, l, du*5, dd*5, df*10] }; // チャート用にスケール調整
 }
 
 function calculateBattle() {
-    const ownVal = runCalc("own");
-    const enmVal = runCalc("enm");
+    const own = runCalc("own");
+    const enm = runCalc("enm");
 
-    const predDiv = document.getElementById("battlePrediction");
-    const winnerAnnounce = document.getElementById("winnerAnnounce");
-    const powerDiff = document.getElementById("powerDiff");
-    predDiv.style.display = "block";
-
-    let winnerLabel, winnerClass, ratio;
-    if (ownVal > enmVal) {
-        winnerLabel = "★ 自編成の勝利予想 ★";
-        winnerClass = "winner-own";
-        ratio = ownVal / enmVal;
-    } else {
-        winnerLabel = "★ 敵編成の勝利予想 ★";
-        winnerClass = "winner-enemy";
-        ratio = enmVal / ownVal;
-    }
-
-    // 評価値が7乗根ベースなので、比率を7乗して実質的な戦力倍率を出す
-    const strengthMultiplier = Math.pow(ratio, 7);
-
-    winnerAnnounce.textContent = winnerLabel;
-    winnerAnnounce.className = "winner-text " + winnerClass;
-    powerDiff.textContent = "兵種相性込みの強さの差: 約 " + strengthMultiplier.toFixed(2) + " 倍";
+    // 勝利予想
+    const ratio = Math.max(own.v11, enm.v11) / Math.min(own.v11, enm.v11);
+    const multiplier = Math.pow(ratio, 7);
+    const winDiv = document.getElementById("battlePrediction");
+    const winAnn = document.getElementById("winnerAnnounce");
+    winDiv.style.display = "block";
     
-    predDiv.scrollIntoView({ behavior: 'smooth' });
+    if (own.v11 > enm.v11) {
+        winAnn.textContent = "★ 自編成の勝利予想 ★";
+        winAnn.style.color = "#1a73e8";
+    } else {
+        winAnn.textContent = "★ 敵編成の勝利予想 ★";
+        winAnn.style.color = "#d93025";
+    }
+    document.getElementById("powerDiff").textContent = `強さの差: 約 ${multiplier.toFixed(2)} 倍`;
+
+    updateChart(own.radar, enm.radar);
+    winDiv.scrollIntoView({ behavior: 'smooth' });
+}
+
+function updateChart(ownData, enmData) {
+    const ctx = document.getElementById('radarChart').getContext('2d');
+    if (radarChart) radarChart.destroy();
+    radarChart = new Chart(ctx, {
+        type: 'radar',
+        data: {
+            labels: ['攻撃', '生命', 'ダメ増x5', 'ダメ減x5', '防御x10'],
+            datasets: [
+                { label: '自編成', data: ownData, backgroundColor: 'rgba(26, 115, 232, 0.2)', borderColor: '#1a73e8' },
+                { label: '敵編成', data: enmData, backgroundColor: 'rgba(217, 48, 37, 0.2)', borderColor: '#d93025' }
+            ]
+        },
+        options: { scales: { r: { suggestMin: 0 } } }
+    });
 }
 </script>
-
 </body>
 </html>
