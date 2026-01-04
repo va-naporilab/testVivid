@@ -2,275 +2,323 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <title>部隊戦力比較・詳細解析シミュレーター v2</title>
+    <title>部隊戦力比較・詳細解析 v6.3</title>
+    <link rel="icon" href="NAPOfavicon.png" type="image/png">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        body { font-family: 'Helvetica Neue', Arial, sans-serif; background-color: #f0f2f5; margin: 0; padding: 10px; color: #333; }
-        h2 { text-align: center; color: #1a73e8; margin-bottom: 5px; }
-        .credit { text-align: center; font-size: 0.8em; color: #666; margin-bottom: 20px; }
+        body { font-family: 'Helvetica Neue', Arial, sans-serif; background-color: #f0f2f5; margin: 0; padding: 10px; color: #333; font-size: 16px; }
+        h2 { text-align: center; color: #1a73e8; margin-bottom: 5px; font-size: 1.8em; }
+        .credit {  text-align: center;  font-size: 1.4em; color: #666; margin-bottom: 20px; }
+        .title-icon { width: 46px;  height: 46px; object-fit: contain; }
+        .comparison-wrapper { display: flex; gap: 20px; flex-wrap: wrap; justify-content: center; }
+        .side-panel { flex: 1; min-width: 400px; max-width: 600px; background: white; padding: 25px; border-radius: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
+        .side-own { border-top: 10px solid #1a73e8; }
+        .side-enemy { border-top: 10px solid #d93025; }
         
-        .comparison-wrapper { display: flex; gap: 15px; flex-wrap: wrap; justify-content: center; }
-        .side-panel { flex: 1; min-width: 360px; max-width: 550px; background: white; padding: 15px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
-        .side-own { border-top: 6px solid #1a73e8; }
-        .side-enemy { border-top: 6px solid #d93025; }
+        h3 { text-align: center; font-size: 1.6em; margin-bottom: 15px; }
         
-        h3 { text-align: center; margin: 0 0 10px 0; color: #444; border-bottom: 1px solid #eee; padding-bottom: 5px; }
-        h4 { font-size: 0.9em; margin: 15px 0 5px 0; color: #1a73e8; border-left: 4px solid #1a73e8; padding-left: 8px; }
-
-        /* 入力UIの改良 */
-        .input-group { background: #fdfdfd; padding: 10px; border-radius: 8px; border: 1px solid #efefef; }
-        .input-row { margin-bottom: 12px; }
-        .label-ctrl { display: flex; justify-content: space-between; align-items: center; }
-        label { font-size: 0.8em; font-weight: bold; color: #555; }
+        /* 入力UI */
+        .input-row { margin-bottom: 15px; border-bottom: 1px solid #f0f0f0; padding-bottom: 8px; }
+        .label-container { display: flex; justify-content: center; align-items: center; gap: 10px; margin-bottom: 8px; }
+        label { font-size: 1.1em; font-weight: bold; color: #333; }
+        .fixed-val { display: none; font-size: 1em; color: #1a73e8; font-weight: bold; background: #e8f0fe; padding: 2px 10px; border-radius: 4px; }
         
-        .ctrl-box { display: flex; align-items: center; gap: 5px; margin-top: 4px; }
-        input[type="number"] { width: 70px; padding: 4px; border: 1px solid #ddd; border-radius: 4px; text-align: right; }
-        input[type="range"] { flex-grow: 1; cursor: pointer; }
-        .step-btn { padding: 2px 8px; cursor: pointer; background: #eee; border: 1px solid #ccc; border-radius: 4px; font-size: 12px; }
-        .step-btn:hover { background: #ddd; }
+        .ctrl-box { display: flex; align-items: center; gap: 4px; flex-wrap: wrap; justify-content: center; }
+        input[type="number"] { width: 90px; padding: 6px; border: 2px solid #ddd; border-radius: 6px; text-align: center; font-size: 1.1em; font-weight: bold; }
+        input[type="range"] { flex-grow: 1; min-width: 150px; height: 14px; cursor: pointer; }
+        .btn { padding: 6px 10px; cursor: pointer; border: none; border-radius: 6px; font-weight: bold; font-size: 0.9em; color: white; }
+        .btn-plus { background-color: #1a73e8; }
+        .btn-plus-big { background-color: #0d47a1; }
+        .btn-minus { background-color: #e53935; }
+        .btn-minus-big { background-color: #b71c1c; }
 
-        select { width: 100%; padding: 6px; border-radius: 6px; border: 1px solid #ddd; margin-top: 4px; }
+        /* モード切り替え */
+        .view-mode .ctrl-box, .view-mode select { display: none; }
+        .view-mode .fixed-val { display: inline-block; }
 
-        /* ボタン */
-        .calc-btn { margin: 25px auto; display: block; padding: 15px 40px; cursor: pointer; background-color: #28a745; color: white; border: none; border-radius: 50px; font-size: 18px; font-weight: bold; box-shadow: 0 4px 15px rgba(40,167,69,0.3); transition: 0.2s; }
-        .calc-btn:hover { background-color: #218838; transform: translateY(-2px); }
-        .nav-btn { margin: 40px auto; display: block; padding: 10px 20px; cursor: pointer; background-color: #6c757d; color: white; border: none; border-radius: 6px; text-decoration: none; text-align: center; width: fit-content; }
+        /* 結果表示エリア */
+        .results-area { margin-top: 20px; padding-top: 15px; border-top: 2px solid #eee; }
+        h4 { font-size: 1.2em; color: #1a73e8; margin: 15px 0 8px 0; border-left: 5px solid #1a73e8; padding-left: 10px; }
+        .res-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+        .res-item { background: #f8f9fa; padding: 10px; border-radius: 8px; border: 1px solid #eee; }
+        .res-label { font-size: 0.8em; color: #666; font-weight: bold; display: block; }
+        .res-value { font-size: 1.1em; font-weight: bold; }
+        .full-width { grid-column: span 2; background: #fff3f3; }
 
-        /* 結果表示 */
-        .res-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 5px; }
-        .res-item { background: #f8f9fa; padding: 6px 8px; border-radius: 4px; border: 1px solid #eee; }
-        .res-label { font-size: 0.7em; color: #666; display: block; }
-        .res-value { font-size: 0.95em; font-weight: bold; color: #333; }
-        .highlight { color: #d93025; }
-        .full-width { grid-column: span 2; }
-        .important-res { background: #fff3f3; border: 1px solid #ffcdd2; }
+        /* チャート */
+        .chart-section { max-width: 1000px; margin: 30px auto; background: white; padding: 30px; border-radius: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+        .chart-title { text-align: center; font-size: 1.5em; font-weight: bold; color: #444; margin-bottom: 15px; }
+        .toggle-btn { padding: 12px 24px; font-size: 1.1em; cursor: pointer; border-radius: 40px; border: 2px solid #1a73e8; background: white; color: #1a73e8; font-weight: bold; }
+        .toggle-btn.active { background: #1a73e8; color: white; }
 
-        /* チャートエリア */
-        .chart-container { max-width: 500px; margin: 20px auto; background: white; padding: 15px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
-        
-        .battle-prediction { margin: 30px auto; max-width: 600px; background: white; padding: 25px; border-radius: 12px; text-align: center; border: 3px double #1a73e8; display: none; }
+        .calc-btn { margin: 30px auto; display: block; padding: 20px 70px; cursor: pointer; background: linear-gradient(135deg, #28a745, #1e7e34); color: white; border: none; border-radius: 60px; font-size: 1.6em; font-weight: bold; box-shadow: 0 6px 20px rgba(40,167,69,0.3); }
+        .edit-btn { background: linear-gradient(135deg, #f57c00, #e65100); }
+
+        .nav-btn { margin: 50px auto; display: block; padding: 20px 30px; background-color: #546e7a; color: white; text-decoration: none; border-radius: 12px; width: fit-content; font-size: 1.3em; font-weight: bold; text-align: center; }
+        .battle-prediction { margin: 20px auto; text-align: center; max-width: 700px; background: white; padding: 25px; border-radius: 20px; border: 4px double #1a73e8; display: none; }
     </style>
 </head>
 <body>
 
-<h2>ビビアミ　部隊戦力比較・詳細解析</h2>
+<h2>    ビビアミ　部隊戦力比較・詳細解析 v6.3</h2>
 <div class="credit">by ナポリタン1世 feat.GEMINI</div>
+<div id="ui-container" class="comparison-wrapper"></div>
 
-<div class="comparison-wrapper">
-    <div class="side-panel side-own" id="panel_own">
-        <h3>自編成</h3>
-        <div class="input-group">
-            <div class="input-row">
-                <label>兵種相性</label>
-                <select id="own_affinity" onchange="autoCalc()"><option value="same">同兵種</option><option value="win">有利兵種</option><option value="loss">不利兵種</option></select>
-            </div>
-            <div id="own_inputs"></div></div>
-
-        <div class="results-area" id="own_res_area" style="display:none;">
-            <h4>1. 部隊戦力推定</h4>
-            <div class="res-grid">
-                <div class="res-item"><span class="res-label">バフ合算係数</span><span class="res-value" id="own_buffMult">-</span></div>
-                <div class="res-item"><span class="res-label">推定戦力（専5フル古代想定）</span><span class="res-value highlight" id="own_powerM">-</span></div>
-            </div>
-            <h4>2. 換算・バランス</h4>
-            <div class="res-grid" id="own_kansan_grid"></div>
-            <h4>3. 戦闘評価指標</h4>
-            <div class="res-grid" id="own_hyoka_grid"></div>
-        </div>
-    </div>
-
-    <div class="side-panel side-enemy" id="panel_enm">
-        <h3>敵編成</h3>
-        <div class="input-group">
-            <div class="input-row">
-                <label>兵種相性</label>
-                <select id="enm_affinity" onchange="autoCalc()"><option value="same">同兵種</option><option value="win">有利兵種</option><option value="loss">不利兵種</option></select>
-            </div>
-            <div id="enm_inputs"></div></div>
-
-        <div class="results-area" id="enm_res_area" style="display:none;">
-            <h4>1. 部隊戦力推定</h4>
-            <div class="res-grid">
-                <div class="res-item"><span class="res-label">バフ合算係数</span><span class="res-value" id="enm_buffMult">-</span></div>
-                <div class="res-item"><span class="res-label">推定戦力（専5フル古代想定）</span><span class="res-value highlight" id="enm_powerM">-</span></div>
-            </div>
-            <h4>2. 換算・バランス</h4>
-            <div class="res-grid" id="enm_kansan_grid"></div>
-            <h4>3. 戦闘評価指標</h4>
-            <div class="res-grid" id="enm_hyoka_grid"></div>
-        </div>
-    </div>
-</div>
-
-<div class="chart-container">
-    <canvas id="radarChart"></canvas>
-</div>
-
-<button class="calc-btn" onclick="calculateBattle()">全軍、詳細解析開始！</button>
+<button id="mainActionBtn" class="calc-btn" onclick="handleMainAction()">解析開始・チャート更新</button>
 
 <div id="battlePrediction" class="battle-prediction">
-    <div id="winnerAnnounce" style="font-size:24px; font-weight:bold;"></div>
-    <div id="powerDiff" style="font-size:18px; margin-top:10px; background:#fff9c4; display:inline-block; padding:5px 15px;"></div>
+    <div id="winnerAnnounce" style="font-size:28px; font-weight:bold; margin-bottom:10px;"></div>
+    <div id="powerDiff" style="font-size:20px; background:#fff9c4; padding:10px; border-radius:8px;"></div>
 </div>
 
-<a href="TheoreticalSimulator.html" class="nav-btn">理論近似シミュレータへ移動</a>
+<div class="chart-section">
+    <div class="chart-title">強さパラメータの可視化と比較</div>
+    
+    <canvas id="radarChart"></canvas>
+    <div style="text-align:center; margin-top:20px;">
+        <button id="affinityToggle" class="toggle-btn" onclick="toggleAffinityMode()">兵種相性をレーダーに反映: OFF</button>
+    </div>
+</div>
+
+<a onclick="goToSimulator()"  class="nav-btn">【戦闘の理論近似シミュレーター】へ移動する</a>
 
 <script>
-// 設定データ
-const paramConfig = [
-    { key: "affinityVal", label: "兵種相性値 (%)", min: 0, max: 300, val: 120 },
-    { key: "sortie", label: "出撃", min: 0, max: 600, val: 200 },
-    { key: "attack", label: "攻撃 (%)", min: 0, max: 10000, val: 3000 },
-    { key: "life", label: "生命 (%)", min: 0, max: 10000, val: 3000 },
-    { key: "damageUp", label: "ダメ増 (%)", min: 0, max: 1500, val: 300 },
-    { key: "damageDown", label: "ダメ減 (%)", min: 0, max: 1500, val: 300 },
-    { key: "defense", label: "防御 (%)", min: 0, max: 600, val: 100 }
+let affinityMode = false;
+let isViewMode = false;
+let radarChart = null;
+
+const config = [
+    { key: "affinityVal", label: "兵種相性値 (%)", min: 0, max: 200, step: 10, btns: [1, 10], def: 120 },
+    { key: "sortie", label: "出撃", min: 0, max: 600, step: 10, btns: [1, 10], def: 200 },
+    { key: "defense", label: "防御 (%)", min: 0, max: 600, step: 10, btns: [1, 10], def: 100 },
+    { key: "damageUp", label: "ダメ増 (%)", min: 0, max: 1500, step: 20, btns: [10, 100], def: 300 },
+    { key: "damageDown", label: "ダメ減 (%)", min: 0, max: 1500, step: 20, btns: [10, 100], def: 300 },
+    { key: "attack", label: "攻撃 (%)", min: 0, max: 10000, step: 200, btns: [50, 500], def: 3000 },
+    { key: "life", label: "生命 (%)", min: 0, max: 10000, step: 200, btns: [50, 500], def: 3000 }
 ];
 
-// UI生成
-function initUI(prefix) {
-    const container = document.getElementById(prefix + "_inputs");
-    paramConfig.forEach(p => {
+function createSide(prefix, title) {
+    const html = `
+    <div id="${prefix}_panel" class="side-panel side-${prefix === 'own' ? 'own' : 'enemy'}">
+        <h3>${title}</h3>
+        <div class="input-row">
+            <div class="label-container"><label>兵種相性</label><div id="${prefix}_aff_text" class="fixed-val"></div></div>
+            <select id="${prefix}_affinity" style="width:100%; font-size:1.1em; padding:8px; border-radius:6px; border:2px solid #ddd;">
+                <option value="same">同兵種</option><option value="win">有利兵種</option><option value="loss">不利兵種</option>
+            </select>
+        </div>
+        <div id="${prefix}_inputs"></div>
+        <div class="results-area">
+            <h4>1. 部隊戦力推定</h4>
+            <div class="res-grid">
+                <div class="res-item"><span class="res-label">バフ合算係数</span><span id="${prefix}_buffMult" class="res-value">-</span></div>
+                <div class="res-item"><span class="res-label">推定戦力(M)</span><span id="${prefix}_powerM" class="res-value" style="color:#d93025">-</span></div>
+            </div>
+            <h4>2. 換算・バランス</h4>
+            <div id="${prefix}_kansan_grid" class="res-grid"></div>
+            <h4>3. 戦闘評価指標</h4>
+            <div id="${prefix}_hyoka_grid" class="res-grid"></div>
+        </div>
+    </div>`;
+    document.getElementById('ui-container').insertAdjacentHTML('beforeend', html);
+
+    const container = document.getElementById(`${prefix}_inputs`);
+    config.forEach(p => {
         const row = document.createElement("div");
         row.className = "input-row";
         row.innerHTML = `
-            <div class="label-ctrl"><label>${p.label}</label></div>
+            <div class="label-container"><label>${p.label}</label><div id="${prefix}_${p.key}_fixed" class="fixed-val"></div></div>
             <div class="ctrl-box">
-                <button class="step-btn" onclick="stepVal('${prefix}_${p.key}', -10)">-10</button>
-                <input type="range" id="${prefix}_${p.key}_range" min="${p.min}" max="${p.max}" value="${p.val}" oninput="syncVal('${prefix}_${p.key}', 'range')">
-                <input type="number" id="${prefix}_${p.key}" value="${p.val}" oninput="syncVal('${prefix}_${p.key}', 'num')">
-                <button class="step-btn" onclick="stepVal('${prefix}_${p.key}', 10)">+10</button>
-            </div>
-        `;
+                <button class="btn btn-minus-big" onclick="step('${prefix}_${p.key}', -${p.btns[1]})">-${p.btns[1]}</button>
+                <button class="btn btn-minus" onclick="step('${prefix}_${p.key}', -${p.btns[0]})">-${p.btns[0]}</button>
+                <input type="range" id="${prefix}_${p.key}_range" min="${p.min}" max="${p.max}" step="${p.step}" value="${p.def}" oninput="sync('${prefix}_${p.key}', 'range')">
+                <input type="number" id="${prefix}_${p.key}" value="${p.def}" oninput="sync('${prefix}_${p.key}', 'num')">
+                <button class="btn btn-plus" onclick="step('${prefix}_${p.key}', ${p.btns[0]})">+${p.btns[0]}</button>
+                <button class="btn btn-plus-big" onclick="step('${prefix}_${p.key}', ${p.btns[1]})">+${p.btns[1]}</button>
+            </div>`;
         container.appendChild(row);
     });
 }
 
-function syncVal(id, source) {
-    const range = document.getElementById(id + "_range");
-    const num = document.getElementById(id);
-    if (source === 'range') num.value = range.value;
-    else range.value = num.value;
+createSide("own", "自編成");
+createSide("enm", "敵編成");
+
+// 相性値連動
+const linkAff = (id1, id2, type) => {
+    document.getElementById(id1).addEventListener('input', (e) => { 
+        document.getElementById(id2).value = e.target.value; 
+        sync(id2.replace('_range',''), type); 
+        calculateBattle();
+    });
+};
+linkAff('own_affinityVal', 'enm_affinityVal', 'num');
+linkAff('enm_affinityVal', 'own_affinityVal', 'num');
+linkAff('own_affinityVal_range', 'enm_affinityVal_range', 'range');
+linkAff('enm_affinityVal_range', 'own_affinityVal_range', 'range');
+
+function sync(id, src) {
+    const r = document.getElementById(id + "_range"), n = document.getElementById(id);
+    if (src === 'range') n.value = r.value; else r.value = n.value;
+    if (!isViewMode) calculateBattle();
+}
+function step(id, val) {
+    const n = document.getElementById(id);
+    n.value = Math.max(0, parseInt(n.value) + val);
+    sync(id, 'num');
+    if(id.includes('affinityVal')) {
+        const target = id.startsWith('own') ? 'enm_affinityVal' : 'own_affinityVal';
+        document.getElementById(target).value = n.value;
+        sync(target, 'num');
+    }
 }
 
-function stepVal(id, step) {
-    const num = document.getElementById(id);
-    num.value = Math.max(0, parseInt(num.value) + step);
-    syncVal(id, 'num');
+function handleMainAction() {
+    isViewMode = !isViewMode;
+    const btn = document.getElementById('mainActionBtn');
+    if (isViewMode) {
+        btn.textContent = "条件を再編集する";
+        btn.classList.add('edit-btn');
+        document.querySelectorAll('.side-panel').forEach(p => p.classList.add('view-mode'));
+        document.getElementById('battlePrediction').style.display = 'block';
+        config.forEach(p => {
+            ['own', 'enm'].forEach(side => {
+                document.getElementById(`${side}_${p.key}_fixed`).textContent = document.getElementById(`${side}_${p.key}`).value;
+            });
+        });
+        ['own', 'enm'].forEach(side => {
+            const sel = document.getElementById(`${side}_affinity`);
+            document.getElementById(`${side}_aff_text`).textContent = sel.options[sel.selectedIndex].text;
+        });
+    } else {
+        btn.textContent = "解析開始・チャート更新";
+        btn.classList.remove('edit-btn');
+        document.querySelectorAll('.side-panel').forEach(p => p.classList.remove('view-mode'));
+        document.getElementById('battlePrediction').style.display = 'none';
+    }
+    calculateBattle();
 }
-
-initUI("own");
-initUI("enm");
-
-let radarChart = null;
 
 function formatValue(num) {
     if (num === 0) return "0";
-    let d = num;
-    let suffix = "";
+    if (num < 10 && num > 0) return num.toFixed(2);
+    let d = num, suffix = "";
     if (num >= 100000000) { d /= 100000000; suffix = " 億"; }
     else if (num >= 10000) { d /= 10000; suffix = " 万"; }
     return Number(d.toPrecision(3)) + suffix;
 }
 
-function runCalc(prefix) {
-    const getV = (key) => Number(document.getElementById(prefix + "_" + key).value);
-    const s = getV("sortie"), l = getV("life"), a = getV("attack"), du = getV("damageUp"), dd = getV("damageDown"), df = getV("defense"), affVal = getV("affinityVal");
-    const affType = document.getElementById(prefix + "_affinity").value;
+function getStats(prefix) {
+    const v = (k) => Number(document.getElementById(`${prefix}_${k}`).value);
+    const aff = document.getElementById(`${prefix}_affinity`).value;
+    const s=v("sortie"), l=v("life"), a=v("attack"), du=v("damageUp"), dd=v("damageDown"), df=v("defense"), av=v("affinityVal");
 
-    let adjAtkTerm = (affType === "win") ? (a + affVal + 100) : (affType === "loss" ? (a + 100) / (1 + affVal / 100) : (a + 100));
-
-    // 1. 戦力
     const buffMult = l + a + (du * 7) + (dd * 7) + (df * 14);
     const powerM = (buffMult * s * 10) / 1000000;
 
-    // 2. 換算
     const kansan = {
         "ダメ減→生命換算": (l + 100) / (dd + 100),
         "ダメ増→攻撃換算": (a + 100) / (du + 100),
         "防御→生命換算": (l + 100) / (df + 100),
-        "防御→ダメ減換算": (dd + 100) / (df + 100),
         "生命攻撃バランス": Math.min(l + 100, a + 100) / Math.max(l + 100, a + 100),
         "ダメ増減バランス": Math.min(du + 100, dd + 100) / Math.max(du + 100, dd + 100)
     };
 
-    // 3. 指標
-    const v7 = (adjAtkTerm * (du + 100)) / 10000; // 火力倍
-    const v8 = ((l + 100) * (dd + 100) * (df + 100)) / 1000000; // 耐久倍
-    const v9 = v7 * v8; // 総合強さ値
-    const v9_s2 = v9 * s * s; // 総合編成強さ倍率（出撃考慮）
+    let adjAtkTerm = (aff === "win") ? (a + av + 100) : (aff === "loss" ? (a + 100) / (1 + av / 100) : (a + 100));
+    const v7 = (adjAtkTerm * (du + 100)) / 10000; 
+    const v8 = ((l + 100) * (dd + 100) * (df + 100)) / 1000000; 
+    const v9 = v7 * v8;
+    const v9_s2 = v9 * s * s; 
 
     const hyoka = {
-        "バフ相性火力補正（倍）": v7,
-        "バフ相性耐久補正（倍）": v8,
-        "火力補正（出撃込み）": v7 * s,
-        "耐久補正（出撃込み）": v8 * s,
+        "バフ相性火力補正": v7,
+        "バフ相性耐久補正": v8,
+        "火力補正（出撃込）": v7 * s,
+        "耐久補正（出撃込）": v8 * s,
         "バフ相性総合強さ値": v9,
-        "総合編成強さ倍率（出撃考慮）": v9_s2,
-        "単位強さ評価(5乗根)": Math.pow(v9, 1/5),
+        "総合編成強さ倍率": v9_s2,
         "部隊構成評価(7乗根)": Math.pow(v9_s2, 1/7)
     };
 
-    // DOM出力
-    document.getElementById(prefix + "_buffMult").textContent = buffMult.toLocaleString();
-    document.getElementById(prefix + "_powerM").textContent = powerM.toPrecision(3) + " M";
+    document.getElementById(`${prefix}_buffMult`).textContent = buffMult.toLocaleString();
+    document.getElementById(`${prefix}_powerM`).textContent = powerM.toPrecision(3) + " M";
     
-    const renderGrid = (id, data) => {
+    const render = (id, data) => {
         const g = document.getElementById(id); g.innerHTML = "";
         for (let k in data) {
-            const item = document.createElement("div");
-            item.className = "res-item" + (k.includes("評価") || k.includes("考慮") ? " important-res" : "");
-            if (k === "バフ相性総合強さ値" || k === "総合編成強さ倍率（出撃考慮）") item.classList.add("full-width");
-            item.innerHTML = `<span class="res-label">${k}</span><span class="res-value">${formatValue(data[k])}</span>`;
-            g.appendChild(item);
+            const isFull = k.includes("評価") || k.includes("倍率") || k.includes("総合");
+            g.insertAdjacentHTML('beforeend', `<div class="res-item ${isFull?'full-width':''}"><span class="res-label">${k}</span><span class="res-value">${formatValue(data[k])}</span></div>`);
         }
     };
-    renderGrid(prefix + "_kansan_grid", kansan);
-    renderGrid(prefix + "_hyoka_grid", hyoka);
-    document.getElementById(prefix + "_res_area").style.display = "block";
+    render(`${prefix}_kansan_grid`, kansan);
+    render(`${prefix}_hyoka_grid`, hyoka);
 
-    return { v11: hyoka["部隊構成評価(7乗根)"], radar: [a, l, du*5, dd*5, df*10] }; // チャート用にスケール調整
+    let r_atk = a + 100, r_l = l + 100, r_du = (du + 100) * 7, r_dd = (dd + 100) * 7, r_df = (df + 100) * 14, r_s_atk = s * 20, r_s_def = s * 20;
+    if (affinityMode) {
+        if (aff === "win") r_atk += av;
+        else if (aff === "loss") { const div = Math.sqrt(1 + av / 100); r_atk /= div; r_du /= div; }
+    }
+    return { v11: hyoka["部隊構成評価(7乗根)"], radar: [r_atk, r_l, r_du, r_dd, r_df, r_s_atk, r_s_def] };
+}
+
+function toggleAffinityMode() {
+    affinityMode = !affinityMode;
+    const btn = document.getElementById('affinityToggle');
+    btn.textContent = `兵種相性をレーダーに反映: ${affinityMode ? 'ON' : 'OFF'}`;
+    btn.className = `toggle-btn ${affinityMode ? 'active' : ''}`;
+    calculateBattle();
 }
 
 function calculateBattle() {
-    const own = runCalc("own");
-    const enm = runCalc("enm");
-
-    // 勝利予想
-    const ratio = Math.max(own.v11, enm.v11) / Math.min(own.v11, enm.v11);
-    const multiplier = Math.pow(ratio, 7);
-    const winDiv = document.getElementById("battlePrediction");
-    const winAnn = document.getElementById("winnerAnnounce");
-    winDiv.style.display = "block";
     
-    if (own.v11 > enm.v11) {
-        winAnn.textContent = "★ 自編成の勝利予想 ★";
-        winAnn.style.color = "#1a73e8";
-    } else {
-        winAnn.textContent = "★ 敵編成の勝利予想 ★";
-        winAnn.style.color = "#d93025";
-    }
+    
+    
+    const own = getStats("own"), enm = getStats("enm");
+    const winner = own.v11 > enm.v11 ? {label: "自編成の勝利予想", cls: "#1a73e8"} : {label: "敵編成の勝利予想", cls: "#d93025"};
+    const multiplier = Math.pow(Math.max(own.v11, enm.v11) / Math.min(own.v11, enm.v11), 7);
+    
+    document.getElementById("winnerAnnounce").textContent = `★ ${winner.label} ★`;
+    document.getElementById("winnerAnnounce").style.color = winner.cls;
     document.getElementById("powerDiff").textContent = `強さの差: 約 ${multiplier.toFixed(2)} 倍`;
-
-    updateChart(own.radar, enm.radar);
-    winDiv.scrollIntoView({ behavior: 'smooth' });
+    updateRadar(own.radar, enm.radar);
 }
 
-function updateChart(ownData, enmData) {
+function updateRadar(ownData, enmData) {
     const ctx = document.getElementById('radarChart').getContext('2d');
     if (radarChart) radarChart.destroy();
     radarChart = new Chart(ctx, {
         type: 'radar',
         data: {
-            labels: ['攻撃', '生命', 'ダメ増x5', 'ダメ減x5', '防御x10'],
+            labels: ['攻撃(+100)', '生命(+100)', '(ダメ増+100)x7', '(ダメ減+100)x7', '(防御+100)x14', '出撃火力寄与', '出撃耐久寄与'],
             datasets: [
-                { label: '自編成', data: ownData, backgroundColor: 'rgba(26, 115, 232, 0.2)', borderColor: '#1a73e8' },
-                { label: '敵編成', data: enmData, backgroundColor: 'rgba(217, 48, 37, 0.2)', borderColor: '#d93025' }
+                { label: '自編成', data: ownData, backgroundColor: 'rgba(26, 115, 232, 0.3)', borderColor: '#1a73e8', borderWidth: 4 },
+                { label: '敵編成', data: enmData, backgroundColor: 'rgba(217, 48, 37, 0.3)', borderColor: '#d93025', borderWidth: 4 }
             ]
         },
-        options: { scales: { r: { suggestMin: 0 } } }
+        options: {
+            scales: { r: { pointLabels: { font: { size: 14, weight: 'bold' } }, ticks: { display: false }, suggestedMin: 0 } },
+            plugins: { legend: { labels: { font: { size: 16, weight: 'bold' } } } }
+        }
     });
 }
+function goToSimulator() {
+    // 現在の最新の計算結果を取得するために、一旦計算を実行
+    const own = getStats("own");
+    const enm = getStats("enm");
+
+    // 自軍（A）のデータを保存
+    sessionStorage.setItem('A_units', document.getElementById('own_sortie').value);
+    sessionStorage.setItem('A_buff_f', own.hyoka["バフ相性火力補正"]); // 計算済みの値を保存
+    sessionStorage.setItem('A_buff_h', own.hyoka["バフ相性耐久補正"]); // 計算済みの値を保存
+
+    // 敵軍（B）のデータを保存
+    sessionStorage.setItem('B_units', document.getElementById('enm_sortie').value);
+    sessionStorage.setItem('B_buff_f', enm.hyoka["バフ相性火力補正"]); // 計算済みの値を保存
+    sessionStorage.setItem('B_buff_h', enm.hyoka["バフ相性耐久補正"]); // 計算済みの値を保存
+
+    // シミュレータへ遷移
+    window.location.href = 'TheoreticalSimulator.html';
+}
+window.onload = calculateBattle;
 </script>
 </body>
 </html>
