@@ -80,7 +80,7 @@
     </div>
 </div>
 
-<a onclick="goToSimulator()"  class="nav-btn">【戦闘の理論近似シミュレーター】へ移動する</a>
+<button onclick="goToSimulator()"  class="nav-btn">【戦闘の理論シミュレーター】へ移動する</button>
 
 <script>
 let affinityMode = false;
@@ -257,7 +257,7 @@ function getStats(prefix) {
         if (aff === "win") r_atk += av;
         else if (aff === "loss") { const div = Math.sqrt(1 + av / 100); r_atk /= div; r_du /= div; }
     }
-    return { v11: hyoka["部隊構成評価(7乗根)"], radar: [r_atk, r_l, r_du, r_dd, r_df, r_s_atk, r_s_def] };
+    return { v11: hyoka["部隊構成評価(7乗根)"], radar: [r_atk, r_l, r_du, r_dd, r_df, r_s_atk, r_s_def],hyoka: hyoka  };
 }
 
 function toggleAffinityMode() {
@@ -301,24 +301,28 @@ function updateRadar(ownData, enmData) {
     });
 }
 function goToSimulator() {
-    // 現在の最新の計算結果を取得するために、一旦計算を実行
-    const own = getStats("own");
-    const enm = getStats("enm");
+    try {
+        const own = getStats("own");
+        const enm = getStats("enm");
 
-    // 自軍（A）のデータを保存
-    sessionStorage.setItem('A_units', document.getElementById('own_sortie').value);
-    sessionStorage.setItem('A_buff_f', own.hyoka["バフ相性火力補正"]); // 計算済みの値を保存
-    sessionStorage.setItem('A_buff_h', own.hyoka["バフ相性耐久補正"]); // 計算済みの値を保存
+        // データの保存
+        sessionStorage.setItem('A_units', document.getElementById('own_sortie').value);
+        sessionStorage.setItem('A_buff_f', own.hyoka["バフ相性火力補正"]);
+        sessionStorage.setItem('A_buff_h', own.hyoka["バフ相性耐久補正"]);
 
-    // 敵軍（B）のデータを保存
-    sessionStorage.setItem('B_units', document.getElementById('enm_sortie').value);
-    sessionStorage.setItem('B_buff_f', enm.hyoka["バフ相性火力補正"]); // 計算済みの値を保存
-    sessionStorage.setItem('B_buff_h', enm.hyoka["バフ相性耐久補正"]); // 計算済みの値を保存
+        sessionStorage.setItem('B_units', document.getElementById('enm_sortie').value);
+        sessionStorage.setItem('B_buff_f', enm.hyoka["バフ相性火力補正"]);
+        sessionStorage.setItem('B_buff_h', enm.hyoka["バフ相性耐久補正"]);
 
-    // シミュレータへ遷移
-    window.location.href = 'TheoreticalSimulator.html';
+        // ファイルが存在するか確認するためのログ
+        console.log("移動を試みます...");
+        window.location.href = 'TheoreticalSimulator.html';
+    } catch (e) {
+        console.error("エラー:", e);
+        alert("計算データの取得に失敗しました。解析ボタンを一度押してから試してください。");
+    }
 }
-window.onload = calculateBattle;
+
 </script>
 </body>
 </html>
